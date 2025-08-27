@@ -1,0 +1,148 @@
+/* Reset e font */
+body {
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  margin: 20px;
+  background: #f5f7fa;
+  color: #333;
+}
+
+/* Titoli */
+h1 {
+  text-align: center;
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  color: #2c3e50;
+}
+
+h2 {
+  margin-top: 40px;
+  margin-bottom: 15px;
+  color: #34495e;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 5px;
+}
+
+h3 {
+  margin-top: 20px;
+  color: #2980b9;
+}
+
+/* Sezioni */
+section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
+/* Tabelle */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+table th {
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+}
+
+table tr:nth-child(even) {
+  background-color: #f2f6fc;
+}
+
+table tr:hover {
+  background-color: #eaf4ff;
+}
+
+/* Bottoni */
+button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+/* Bottoni speciali */
+button.giocatore {
+  min-width: 120px;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Input */
+input, select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+/* Messaggi */
+pre {
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+/* Lista rose */
+#rose ul {
+  list-style: none;
+  padding: 0;
+}
+
+#rose li {
+  background: #ecf6ff;
+  border: 1px solid #d0e7ff;
+  margin: 3px 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+#calendarioTbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#calendarioTbl th, #calendarioTbl td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+#calendarioTbl th {
+  background: #2ecc71;
+  color: white;
+}
+
+tr.titolare {
+  background-color: #c8f7c5 !important; /* verde chiaro */
+}
+
+tr.panchina {
+  background-color: #ffd8a8 !important; /* arancione chiaro */
+}
