@@ -65,7 +65,11 @@ async function loadRose() {
     const ul = document.createElement("ul");
     giocatori.forEach(g => {
       const li = document.createElement("li");
-      li.textContent = g;
+      if (typeof g === "string") {
+        li.textContent = g; // retrocompatibile
+      } else {
+        li.textContent = `${g.nome} (Q: ${g.quotazione})`;
+      }
       ul.appendChild(li);
     });
 
@@ -92,44 +96,54 @@ function loadGiocatori() {
   const squadra = document.getElementById("squadreSel").value;
   const rosa = roseData.find(r => r.squadra === squadra);
   if (!rosa) return;
+
   const lista = document.getElementById("listaGiocatori");
   lista.innerHTML = "";
-  titolari.clear();
-  panchina.clear();
 
   let giocatori = [];
   try {
-    giocatori = JSON.parse(rosa.giocatori);
+    giocatori = JSON.parse(rosa.giocatori); // ora JSON con {nome, quotazione}
   } catch(e) {
     console.error("Errore parsing giocatori:", e);
+    return;
   }
 
   giocatori.forEach(g => {
+    const nome = typeof g === "string" ? g : g.nome;
+    if (!nome) return; // sicurezza
+
+    // Bottone Titolare
     const btnT = document.createElement("button");
-    btnT.textContent = g;
+    btnT.textContent = nome;
     btnT.className = "giocatore";
+    btnT.style.background = titolari.has(nome) ? "green" : "";
     btnT.onclick = () => {
-      if (titolari.has(g)) {
-        titolari.delete(g);
+      if (titolari.has(nome)) {
+        titolari.delete(nome);
         btnT.style.background = "";
       } else {
-        titolari.add(g);
-        panchina.delete(g);
+        titolari.add(nome);
+        panchina.delete(nome);
         btnT.style.background = "green";
-        btnP.style.background = "";
+        // Aggiorna bottone panchina se presente
+        const btnP = btnT.nextElementSibling;
+        if (btnP) btnP.style.background = "";
       }
     };
 
+    // Bottone Panchina
     const btnP = document.createElement("button");
     btnP.textContent = "Panchina";
+    btnP.style.background = panchina.has(nome) ? "orange" : "";
     btnP.onclick = () => {
-      if (panchina.has(g)) {
-        panchina.delete(g);
+      if (panchina.has(nome)) {
+        panchina.delete(nome);
         btnP.style.background = "";
       } else {
-        panchina.add(g);
-        titolari.delete(g);
+        panchina.add(nome);
+        titolari.delete(nome);
         btnP.style.background = "orange";
+        // Aggiorna bottone titolari se presente
         btnT.style.background = "";
       }
     };
@@ -139,6 +153,7 @@ function loadGiocatori() {
     lista.appendChild(document.createElement("br"));
   });
 }
+
 document.getElementById("squadreSel").addEventListener("change", loadGiocatori);
 
 // --- Invia formazione ---
@@ -244,60 +259,6 @@ async function loadCalendario() {
   });
 }
 
-// --- Calcolo giornata con panchina ---
-document.getElementById("btnMostraCalcola").addEventListener("click", async () => {
-  const res = await fetch("/api/calcola");
-  const data = await res.json();
-  const area = document.getElementById("calcArea");
-  area.innerHTML = "";
-  if (data.error) { area.textContent = data.error; return; }
-
-  const form = document.createElement("form");
-  form.innerHTML = `<h3>${data.giornata}</h3>`;
-  for (const [squadra, f] of Object.entries(data.squadre)) {
-    const div = document.createElement("div");
-    div.innerHTML = `<h4>${squadra}</h4>`;
-    [...f.titolari, ...(f.panchina||[])]
-      .forEach(g => {
-        div.innerHTML += `${g}: <input type="number" name="${squadra}::${g}" value="6"><br>`;
-      });
-    form.appendChild(div);
-  }
-
-  const pwd = document.createElement("input");
-  pwd.type = "password";
-  pwd.placeholder = "Password";
-  pwd.id = "pwdCalc";
-  form.appendChild(pwd);
-
-  const btn = document.createElement("button");
-  btn.textContent = "Calcola punteggi";
-  form.appendChild(btn);
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const fd = new FormData(form);
-    const voti = {};
-    for (const [k, v] of fd.entries()) {
-      if (k.includes("::")) {
-        const [squadra, g] = k.split("::");
-        if (!voti[squadra]) voti[squadra] = {};
-        voti[squadra][g] = parseFloat(v);
-      }
-    }
-    const res2 = await fetch("/api/calcola", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({password: pwd.value, voti})
-    });
-    const data2 = await res2.json();
-    area.innerHTML = "<pre>" + JSON.stringify(data2,null,2) + "</pre>";
-    loadClassifica();
-    loadCalendario();
-  });
-
-  area.appendChild(form);
-});
 
 // --- Init ---
 loadRose();

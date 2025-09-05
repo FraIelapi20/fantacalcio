@@ -13,4 +13,93 @@
   <button id="btnMostraCalcola">Mostra giornata da calcolare</button>
   <div id="calcArea"></div>
 </section>
-  
+
+<section>
+  <h2>Blocca/sblocca giornata</h2>
+  <input type="number" id="giornataLock" placeholder="Numero giornata">
+  <input type="password" id="pwdLock" placeholder="Password">
+  <button id="btnLock">Blocca</button>
+  <button id="btnUnlock">Sblocca</button>
+  <pre id="msgLock"></pre>
+</section>
+
+<script>
+let roseData = [];
+let titolari = new Set();
+let panchina = new Set();
+
+document.getElementById("btnLock").addEventListener("click", () => lockGiornata(true));
+document.getElementById("btnUnlock").addEventListener("click", () => lockGiornata(false));
+
+async function lockGiornata(locked) {
+  const giornata = document.getElementById("giornataLock").value;
+  const password = document.getElementById("pwdLock").value;
+  const res = await fetch("/api/lock-giornata", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ password, giornata, locked })
+  });
+  const data = await res.json();
+  document.getElementById("msgLock").textContent = JSON.stringify(data, null, 2);
+}
+// --- Calcolo giornata con panchina ---
+document.getElementById("btnMostraCalcola").addEventListener("click", async () => {
+  const res = await fetch("/api/calcola");
+  const data = await res.json();
+  const area = document.getElementById("calcArea");
+  area.innerHTML = "";
+  if (data.error) { area.textContent = data.error; return; }
+
+  const form = document.createElement("form");
+  form.innerHTML = `<h3>${data.giornata}</h3>`;
+  for (const [squadra, f] of Object.entries(data.squadre)) {
+    const div = document.createElement("div");
+    div.innerHTML = `<h4>${squadra}</h4>`;
+    [...f.titolari, ...(f.panchina||[])]
+      .forEach(g => {
+        div.innerHTML += `${g}: <input type="number" name="${squadra}::${g}" value="6"><br>`;
+      });
+    form.appendChild(div);
+  }
+
+  const pwd = document.createElement("input");
+  pwd.type = "password";
+  pwd.placeholder = "Password";
+  pwd.id = "pwdCalc";
+  form.appendChild(pwd);
+
+  const btn = document.createElement("button");
+  btn.textContent = "Calcola punteggi";
+  form.appendChild(btn);
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const voti = {};
+    for (const [k, v] of fd.entries()) {
+      if (k.includes("::")) {
+        const [squadra, g] = k.split("::");
+        if (!voti[squadra]) voti[squadra] = {};
+        voti[squadra][g] = parseFloat(v);
+      }
+    }
+    const res2 = await fetch("/api/calcola", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({password: pwd.value, voti})
+    });
+    const data2 = await res2.json();
+    area.innerHTML = "<pre>" + JSON.stringify(data2,null,2) + "</pre>";
+    loadClassifica();
+    loadCalendario();
+  });
+
+  area.appendChild(form);
+});
+
+loadRose();
+loadClassifica();
+loadCalendario();
+</script>
+</body>
+</html>

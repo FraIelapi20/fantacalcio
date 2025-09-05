@@ -50,8 +50,19 @@ app.get("/api/rose", async (req, res) => {
 // --- API: Aggiungi formazione ---
 app.post("/api/formazioni", async (req, res) => {
   const { squadra, password, titolari, panchina } = req.body;
+  let auth = false
+  if(squadra == "Kira team" && password == "TommasoAstorino1406" ) auth = true;
+  if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
+  if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
+  if(squadra == "i compagni del secolo" && password == "TommasoAstorino1406" ) auth = true;
+  if(squadra == "Stranger Kicks" && password == "Yyynnniii" ) auth = true;
+  if(squadra == "Macelleria Gioielleria" && password == "PasqualeMiletta2001" ) auth = true;
+  if(squadra == "Magola UtD" && password == "GiacintoSimoneMagola" ) auth = true;
+  if(squadra == "PakiGio 2125" && password == "Silvestro2105" ) auth = true;
+  if(squadra == "rufy team fc" && password == "Roberto1910" ) auth = true;
+  if(squadra == "SCOOBY GUD fc" && password == "SonettoMaggisano1234" ) auth = true;
 
-  if (password !== "1234") return res.status(403).json({ error: "Password errata" });
+  if (auth = false) return res.status(403).json({ error: "Password errata" });
 
   try {
     // prendi ultima giornata registrata
@@ -70,28 +81,34 @@ app.post("/api/formazioni", async (req, res) => {
       }
     }
 
-    // inserisci la formazione nella giornata determinata
-    const query = `
-      INSERT INTO formazioni (giornata, squadra, titolari, panchina, calcolato)
-      VALUES ($1, $2, $3::json, $4::json, false)
-      RETURNING *;
-    `;
+    // Prova a fare UPDATE prima
+    const updateRes = await pool.query(
+      `UPDATE formazioni
+       SET titolari = $1::json, panchina = $2::json
+       WHERE squadra = $3 AND giornata = $4
+       RETURNING *`,
+      [JSON.stringify(titolari), JSON.stringify(panchina), squadra, giornata]
+    );
 
-    const values = [
-      giornata,
-      squadra,
-      JSON.stringify(titolari),
-      JSON.stringify(panchina)
-    ];
-
-    const result = await pool.query(query, values);
-
-    res.json({ ok: true, formazione: result.rows[0] });
+    if (updateRes.rowCount > 0) {
+      // Formazione aggiornata
+      res.json({ ok: true, formazione: updateRes.rows[0], updated: true });
+    } else {
+      // Se non esiste, inserisci nuova riga
+      const insertRes = await pool.query(
+        `INSERT INTO formazioni (giornata, squadra, titolari, panchina, calcolato)
+         VALUES ($1, $2, $3::json, $4::json, false)
+         RETURNING *`,
+        [giornata, squadra, JSON.stringify(titolari), JSON.stringify(panchina)]
+      );
+      res.json({ ok: true, formazione: insertRes.rows[0], updated: false });
+    }
   } catch (err) {
     console.error("Errore /api/formazioni:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // --- API: Leggi tutte le formazioni ---
@@ -178,7 +195,7 @@ app.get("/api/calcola", async (req, res) => {
 // calcola i totali, aggiorna formazioni.voti e calcolato=true, aggiorna classifica
 app.post("/api/calcola", async (req, res) => {
   const { password, voti } = req.body;
-  if (password !== "1234") return res.status(403).json({ error: "Password errata" });
+  if (password !== "Yyynnniii") return res.status(403).json({ error: "Password errata" });
 
   try {
     // Determina la giornata corrente: quella non ancora calcolata
@@ -221,5 +238,22 @@ app.post("/api/calcola", async (req, res) => {
 app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "admin.html"));
 });
+
+app.post("/api/lock-giornata", async (req, res) => {
+  const { password, giornata, locked } = req.body;
+  if (password !== "Yyynnniii") return res.status(403).json({ error: "Password errata" });
+
+  try {
+    await pool.query(
+      "UPDATE formazioni SET locked = $1 WHERE giornata = $2",
+      [locked, giornata]
+    );
+    res.json({ ok: true, message: `Giornata ${giornata} ${locked ? "bloccata" : "sbloccata"}` });
+  } catch (err) {
+    console.error("Errore lock-giornata:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 export default app;
