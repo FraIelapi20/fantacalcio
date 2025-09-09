@@ -55,7 +55,7 @@ app.post("/api/formazioni", async (req, res) => {
   if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
   if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
   if(squadra == "i compagni del secolo" && password == "RenatoRiccardo11" ) auth = true;
-  if(squadra == "Stranger Kicks" && password == "Yyynnniii" ) auth = true;
+  if(squadra == "Horto Muso" && password == "Yyynnniii" ) auth = true;
   if(squadra == "Macelleria Gioielleria" && password == "PasqualeMiletta2001" ) auth = true;
   if(squadra == "Magola UtD" && password == "GiacintoSimoneMagola" ) auth = true;
   if(squadra == "PakiGio 2125" && password == "Silvestro2105" ) auth = true;
