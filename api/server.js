@@ -51,7 +51,7 @@ app.get("/api/rose", async (req, res) => {
 app.post("/api/formazioni", async (req, res) => {
   const { squadra, password, titolari, panchina } = req.body;
   let auth = false
-  if(squadra == "Kira team" && password == "TommasoAstorino1406" ) auth = true;
+  if(squadra == "Kira team" && password == "TommasoAstorino0406" ) auth = true;
   if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
   if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
   if(squadra == "i compagni del secolo" && password == "RenatoRiccardo11" ) auth = true;
