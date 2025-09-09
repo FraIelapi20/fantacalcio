@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Rose</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Rose</h1>
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <div id="rose"></div>
+
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <script>
+    let roseData = [];
+    let crediti;
+    let titolari = new Set();
+    let panchina = new Set(); 
+    
+    // --- Carica rose ---
+  async function loadRose() {
+  const res = await fetch("/api/rose");
+  roseData = await res.json();
+  const div = document.getElementById("rose");
+  div.innerHTML = "";
+    roseData.forEach(r => {
+    // Converti la stringa JSON in array
+    let giocatori = [];
+    try {
+      giocatori = JSON.parse(r.giocatori);
+    } catch(e) {
+      console.error("Errore parsing giocatori:", e);
+    }
+
+    // Mostra nome squadra + crediti residui
+    const h3 = document.createElement("h3");
+    h3.textContent = `${r.squadra} (Crediti Residui: ${r.crediti})`; // <- qui
+
+    const ul = document.createElement("ul");
+    giocatori.forEach(g => {
+      const li = document.createElement("li");
+      if (typeof g === "string") {
+        li.textContent = g; // retrocompatibile
+      } else {
+        li.textContent = `${g.nome} (Q: ${g.quotazione})`;
+      }
+      ul.appendChild(li);
+    });
+
+    div.appendChild(h3);
+    div.appendChild(ul);
+});
+
+
+  // Squadre select
+  const squadreSel = document.getElementById("squadreSel");
+  squadreSel.innerHTML = "";
+  roseData.forEach(r => {
+    const opt = document.createElement("option");
+    opt.value = r.squadra;
+    opt.textContent = r.squadra;
+    squadreSel.appendChild(opt);
+  });
+  loadGiocatori();
+}
+
+    // --- Init ---
+  loadRose();
+  </script>
+</body>
+</html>

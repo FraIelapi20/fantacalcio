@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Inserisci Formazione</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Inserisci formazione</h1>
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <!-- notare: qui non c'è #rose, perché questa è la pagina formazione -->
+  <label>Scegli squadra: <select id="squadreSel"></select></label><br>
+  <label>Password: <input type="password" id="pwdForm"></label><br><br>
+
+  <div id="listaGiocatori"></div><br>
+
+  <button id="btnInviaForm">Invia Formazione</button>
+  <pre id="msgForm"></pre>
+
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    let roseData = [];
+    let titolari = new Set();
+    let panchina = new Set();
+
+    // Carica tutte le rose e popola la select. Se esiste il contenitore #rose lo renderizza (utile se riusi la funzione in altre pagine)
+    async function loadRose() {
+      try {
+        const res = await fetch("/api/rose");
+        roseData = await res.json();
+      } catch (err) {
+        console.error("Errore fetch /api/rose:", err);
+        return;
+      }
+
+      // Se nella pagina esiste il container #rose, lo popolo (in questa pagina non c'è, ma funzione è riutilizzabile)
+      const divRose = document.getElementById("rose");
+      if (divRose) divRose.innerHTML = "";
+
+      // Popola la select squadre se presente
+      const squadreSel = document.getElementById("squadreSel");
+      if (squadreSel) squadreSel.innerHTML = "";
+
+      roseData.forEach(r => {
+        // giocatori può essere stringa JSON oppure già array/object
+        let giocatori = [];
+        if (typeof r.giocatori === 'string') {
+          try { giocatori = JSON.parse(r.giocatori); }
+          catch (e) { console.error("Errore parsing giocatori:", e); giocatori = []; }
+        } else if (Array.isArray(r.giocatori)) {
+          giocatori = r.giocatori;
+        } else {
+          giocatori = r.giocatori || [];
+        }
+
+        if (divRose) {
+          const h3 = document.createElement("h3");
+          h3.textContent = r.squadra;
+          const ul = document.createElement("ul");
+          giocatori.forEach(g => {
+            const li = document.createElement("li");
+            li.textContent = (typeof g === 'string') ? g : `${g.nome} (Q: ${g.quotazione})`;
+            ul.appendChild(li);
+          });
+          divRose.appendChild(h3);
+          divRose.appendChild(ul);
+        }
+
+        if (squadreSel) {
+          const opt = document.createElement("option");
+          opt.value = r.squadra;
+          opt.textContent = r.squadra;
+          squadreSel.appendChild(opt);
+        }
+      });
+
+      // Dopo aver popolato la select, carico i giocatori per la squadra selezionata
+      if (squadreSel) loadGiocatori();
+    }
+
+    // Carica giocatori per la squadra selezionata e costruisce i bottoni.
+    // Nota: non svuota i Set qui — lo facciamo quando l'utente cambia squadra.
+    function loadGiocatori() {
+      const squadreSel = document.getElementById("squadreSel");
+      const lista = document.getElementById("listaGiocatori");
+      if (!squadreSel || !lista) return;
+
+      const squadra = squadreSel.value;
+      const rosa = roseData.find(r => r.squadra === squadra);
+      if (!rosa) {
+        lista.innerHTML = "<em>Nessuna rosa trovata</em>";
+        return;
+      }
+
+      lista.innerHTML = "";
+
+      // Otteniamo i giocatori in modo robusto
+      let giocatori = [];
+      if (typeof rosa.giocatori === 'string') {
+        try { giocatori = JSON.parse(rosa.giocatori); } catch (e) { giocatori = []; }
+      } else if (Array.isArray(rosa.giocatori)) {
+        giocatori = rosa.giocatori;
+      } else {
+        giocatori = rosa.giocatori || [];
+      }
+
+      giocatori.forEach(g => {
+        const nome = (typeof g === 'string') ? g : (g && g.nome) ? g.nome : null;
+        if (!nome) return;
+
+        // Bottone Titolare
+        const btnT = document.createElement("button");
+        btnT.textContent = nome;
+        btnT.className = "giocatore";
+        btnT.style.background = titolari.has(nome) ? "green" : "";
+        btnT.addEventListener("click", () => {
+          if (titolari.has(nome)) {
+            titolari.delete(nome);
+            btnT.style.background = "";
+          } else {
+            titolari.add(nome);
+            panchina.delete(nome);
+            btnT.style.background = "green";
+            // se esiste il bottone panchina adiacente, resetta il suo colore
+            const maybeP = btnT.nextElementSibling;
+            if (maybeP && maybeP.textContent === "Panchina") maybeP.style.background = "";
+          }
+        });
+
+        // Bottone Panchina
+        const btnP = document.createElement("button");
+        btnP.textContent = "Panchina";
+        btnP.style.background = panchina.has(nome) ? "orange" : "";
+        btnP.addEventListener("click", () => {
+          if (panchina.has(nome)) {
+            panchina.delete(nome);
+            btnP.style.background = "";
+          } else {
+            panchina.add(nome);
+            titolari.delete(nome);
+            btnP.style.background = "orange";
+            btnT.style.background = "";
+          }
+        });
+
+        lista.appendChild(btnT);
+        lista.appendChild(btnP);
+        lista.appendChild(document.createElement("br"));
+      });
+    }
+
+    // Quando cambio squadra voglio resettare le selezioni e ricaricare i bottoni
+    const squadreSelElm = document.getElementById("squadreSel");
+    if (squadreSelElm) {
+      squadreSelElm.addEventListener("change", () => {
+        titolari.clear();
+        panchina.clear();
+        loadGiocatori();
+      });
+    }
+
+    // Invio formazione: controllo dimensioni e chiamata API. Se loadCalendario esiste lo chiama.
+    const btnInvia = document.getElementById("btnInviaForm");
+    if (btnInvia) {
+      btnInvia.addEventListener("click", async () => {
+        if (titolari.size !== 5) return alert("Seleziona 5 titolari");
+        if (panchina.size !== 3) return alert("Seleziona 3 in panchina");
+
+        const squadra = document.getElementById("squadreSel").value;
+        const password = (document.getElementById("pwdForm") || {}).value || "";
+
+        try {
+          const res = await fetch("/api/formazioni", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              squadra,
+              password,
+              titolari: Array.from(titolari),
+              panchina: Array.from(panchina)
+            })
+          });
+          const data = await res.json();
+          document.getElementById("msgForm").textContent = JSON.stringify(data, null, 2);
+          // Chiamiamo loadCalendario solo se è definita (es. se hai incluso main.js con quella funzione)
+          if (typeof window.loadCalendario === "function") window.loadCalendario();
+        } catch (err) {
+          console.error("Errore invio formazione:", err);
+          document.getElementById("msgForm").textContent = "Errore invio: vedi console";
+        }
+      });
+    }
+
+    // Carica rose all'inizio
+    loadRose();
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendario</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Calendario</h1>
+
+  <label>Seleziona giornata: 
+    <select id="selGiornata"></select>
+  </label>
+  <div id="calendarioContainer"></div>
+
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <script>
+    let roseData = [];
+    let titolari = new Set();
+    let panchina = new Set();
+    // --- Carica calendario ---
+  async function loadCalendario() {
+  const res = await fetch("/api/formazioni");
+  const cal = await res.json();
+  const sel = document.getElementById("selGiornata");
+  sel.innerHTML = "";
+
+  // Popola select con tutte le giornate
+  Object.keys(cal).forEach(g => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    opt.textContent = g;
+    sel.appendChild(opt);
+  });
+
+  function mostraGiornata(giornata) {
+    const data = cal[giornata];
+    const container = document.getElementById("calendarioContainer");
+    container.innerHTML = "";
+
+    for (const [squadra, f] of Object.entries(data.squadre)) {
+      const heading = document.createElement("h3");
+      heading.textContent = squadra;
+      container.appendChild(heading);
+
+      const tbl = document.createElement("table");
+      tbl.innerHTML = `
+        <thead>
+          <tr>
+            <th>Giocatore</th>
+            <th>Ruolo</th>
+            <th>Voto</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = tbl.querySelector("tbody");
+
+      f.titolari.forEach(g => {
+        const tr = document.createElement("tr");
+        const voto = (f.voti && f.voti[g]) || 0; // default 0 se non c'è voto
+        if (voto > 6) tr.style.backgroundColor = "#c8f7c5"; // verde chiaro
+        tr.innerHTML = `<td>${g}</td><td>Titolare</td><td>${voto}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      (f.panchina||[]).forEach(g => {
+        const tr = document.createElement("tr");
+        const voto = (f.voti && f.voti[g]) || 0;
+        if (voto > 6) tr.style.backgroundColor = "#c8f7c5"; // verde chiaro anche in panchina
+        tr.innerHTML = `<td>${g}</td><td>Panchina</td><td>${voto}</td>`;
+        tbody.appendChild(tr);
+      });
+
+
+      container.appendChild(tbl);
+    }
+  }
+
+  // Mostra la prima giornata all'avvio
+  mostraGiornata(Object.keys(cal)[0]);
+
+  // Cambia giornata al select
+  sel.addEventListener("change", () => {
+    mostraGiornata(sel.value);
+  });
+}
+
+  loadCalendario();
+  </script>
+</body>
+</html>
+

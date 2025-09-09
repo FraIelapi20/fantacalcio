@@ -54,7 +54,7 @@ app.post("/api/formazioni", async (req, res) => {
   if(squadra == "Kira team" && password == "TommasoAstorino1406" ) auth = true;
   if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
   if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
-  if(squadra == "i compagni del secolo" && password == "TommasoAstorino1406" ) auth = true;
+  if(squadra == "i compagni del secolo" && password == "RenatoRiccardo11" ) auth = true;
   if(squadra == "Stranger Kicks" && password == "Yyynnniii" ) auth = true;
   if(squadra == "Macelleria Gioielleria" && password == "PasqualeMiletta2001" ) auth = true;
   if(squadra == "Magola UtD" && password == "GiacintoSimoneMagola" ) auth = true;
@@ -62,13 +62,20 @@ app.post("/api/formazioni", async (req, res) => {
   if(squadra == "rufy team fc" && password == "Roberto1910" ) auth = true;
   if(squadra == "SCOOBY GUD fc" && password == "SonettoMaggisano1234" ) auth = true;
 
-  if (auth = false) return res.status(403).json({ error: "Password errata" });
+  if (!auth) return res.status(403).json({ error: "Password errata" });
 
   try {
     // prendi ultima giornata registrata
     const gq = await pool.query("SELECT MAX(giornata) AS max FROM formazioni");
     let giornata = gq.rows[0].max || 1;
+    const giornataRes = await pool.query(
+        "SELECT locked FROM formazioni WHERE giornata = $1",
+        [giornata]
+      );
 
+      if (giornataRes.rows[0]?.locked) {
+        return res.status(403).json({ error: "Partite iniziate. Non puoi inserire la formazione." });
+      }
     // controlla se la giornata corrente è già stata calcolata
     if (gq.rows[0].max) {
       const check = await pool.query(
@@ -254,6 +261,19 @@ app.post("/api/lock-giornata", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.get("/api/giocatori", async (req, res) => {
+  const { search } = req.query;
+  let query = "SELECT * FROM giocatori ORDER BY ruolo, nome";
+  let params = [];
+  if (search) {
+    query = "SELECT * FROM giocatori WHERE nome ILIKE $1 ORDER BY ruolo, nome";
+    params = [`%${search}%`];
+  }
+  const result = await pool.query(query, params);
+  res.json(result.rows);
+});
+
 
 
 export default app;

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista Giocatori</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Lista Giocatori</h1>
+  <div>
+    <label>Cerca giocatore: 
+      <input type="text" id="searchInput" placeholder="Inserisci nome...">
+    </label>
+    <button id="btnSearch">Cerca</button>
+    <button id="btnReset">Reset</button>
+    <button onclick="location.href='index.html'">← Torna alla Home</button>
+  </div>
+
+  <h2>Portieri</h2>
+  <ul id="listaP"></ul>
+
+  <h2>Difensori</h2>
+  <ul id="listaD"></ul>
+
+  <h2>Centrocampisti</h2>
+  <ul id="listaC"></ul>
+
+  <h2>Attaccanti</h2>
+  <ul id="listaA"></ul>
+
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <script>
+    async function loadGiocatoriLista(search = "") {
+      const url = search ? `/api/giocatori?search=${encodeURIComponent(search)}` : "/api/giocatori";
+      const res = await fetch(url);
+      const data = await res.json();
+
+      // reset liste
+      document.getElementById("listaP").innerHTML = "";
+      document.getElementById("listaD").innerHTML = "";
+      document.getElementById("listaC").innerHTML = "";
+      document.getElementById("listaA").innerHTML = "";
+
+      data.forEach(g => {
+        const li = document.createElement("li");
+        li.textContent = `${g.nome} (Q: ${g.qa || '-'})`;
+        if (g.ruolo === "P") document.getElementById("listaP").appendChild(li);
+        if (g.ruolo === "D") document.getElementById("listaD").appendChild(li);
+        if (g.ruolo === "C") document.getElementById("listaC").appendChild(li);
+        if (g.ruolo === "A") document.getElementById("listaA").appendChild(li);
+      });
+    }
+
+    document.getElementById("btnSearch").addEventListener("click", () => {
+      const val = document.getElementById("searchInput").value.trim();
+      loadGiocatoriLista(val);
+    });
+
+    document.getElementById("btnReset").addEventListener("click", () => {
+      document.getElementById("searchInput").value = "";
+      loadGiocatoriLista();
+    });
+
+    // Carica tutti i giocatori all’avvio
+    loadGiocatoriLista();
+  </script>
+</body>
+</html>

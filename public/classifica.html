@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Classifica</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Classifica</h1>
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <table id="classificaTbl"></table>
+
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <script>
+    // --- Carica classifica ---
+  async function loadClassifica() {
+    const res = await fetch("/api/classifica");
+    const cls = await res.json();
+    const tbl = document.getElementById("classificaTbl");
+    tbl.innerHTML = "<tr><th>Squadra</th><th>Punti</th></tr>";
+    cls.forEach(r => {
+      tbl.innerHTML += `<tr><td>${r.squadra}</td><td>${r.punti}</td></tr>`;
+    });
+  }
+
+  loadClassifica();
+
+  </script>
+</body>
+</html>

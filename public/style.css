@@ -146,3 +146,32 @@ tr.titolare {
 tr.panchina {
   background-color: #ffd8a8 !important; /* arancione chiaro */
 }
+
+/* Liste */
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+li {
+  background-color: #ffffff;
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Pulsante Home aggiuntivo */
+button[onclick] {
+  background-color: #6b7280;
+}
+
+button[onclick]:hover {
+  background-color: #4b5563;
+}
