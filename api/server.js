@@ -219,21 +219,25 @@ app.post("/api/calcola", async (req, res) => {
     for (const [squadra, giocatori] of Object.entries(voti)) {
       await pool.query(
         `UPDATE formazioni
-         SET voti = $1::json, calcolato = true
-         WHERE squadra = $2 AND giornata = $3`,
+        SET voti = $1::json, calcolato = true
+        WHERE squadra = $2 AND giornata = $3`,
         [JSON.stringify(giocatori), squadra, giornataCorrente]
       );
 
-      // Somma punti cumulativa
-      const punti = Object.values(giocatori).reduce((a, b) => a + b, 0);
+      // Somma punti cumulativa corretta con decimali
+      const punti = Object.values(giocatori)
+        .map(v => parseFloat(v))
+        .reduce((a, b) => a + b, 0);
+
       await pool.query(
         `INSERT INTO classifica (squadra, punti)
-         VALUES ($1, $2)
-         ON CONFLICT (squadra)
-         DO UPDATE SET punti = classifica.punti + EXCLUDED.punti`,
+        VALUES ($1, $2)
+        ON CONFLICT (squadra)
+        DO UPDATE SET punti = classifica.punti + EXCLUDED.punti`,
         [squadra, punti]
       );
     }
+
 
     res.json({ ok: true, giornata: giornataCorrente, message: "Punteggi calcolati e sommati" });
   } catch (err) {
