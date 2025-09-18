@@ -57,7 +57,7 @@ document.getElementById("btnMostraCalcola").addEventListener("click", async () =
     div.innerHTML = `<h4>${squadra}</h4>`;
     [...f.titolari, ...(f.panchina||[])]
       .forEach(g => {
-          div.innerHTML += `${g}: <input type="number" name="${squadra}::${g}" value="0" step="0.1"><br>`;
+          div.innerHTML += `${g}: <input type="number" name="${squadra}::${g}" value="0" step="0.1" min="-100"><br>`;
       });
     form.appendChild(div);
   }
