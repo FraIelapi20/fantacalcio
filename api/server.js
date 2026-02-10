@@ -287,7 +287,7 @@ app.post("/api/admin/aggiorna-quotazioni", async (req, res) => {
       
       // Aggiorna quotazioni per ogni giocatore
       for (let g of giocatori) {
-        const quotazioneRes = await pool.query("SELECT qa FROM giocatori WHERE nome = $1", [g.nome]);
+        const quotazioneRes = await pool.query("SELECT qa FROM giocatori WHERE nome ILIKE $1", [g.nome]);
         if (quotazioneRes.rows.length && quotazioneRes.rows[0].qa) {
           g.quotazione = quotazioneRes.rows[0].qa;
         }
