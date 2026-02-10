@@ -278,6 +278,82 @@ app.get("/api/giocatori", async (req, res) => {
   res.json(result.rows);
 });
 
+// API Mercato - Carica rosa squadra
+app.post("/api/mercato/rosa", async (req, res) => {
+  const { squadra, password } = req.body;
+  let auth = false;
+  if(squadra == "Kira team" && password == "TommasoAstorino0406" ) auth = true;
+  if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
+  if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
+  if(squadra == "i compagni del secolo" && password == "RenatoRiccardo11" ) auth = true;
+  if(squadra == "Horto Muso" && password == "Yyynnniii" ) auth = true;
+  if(squadra == "Macelleria Gioielleria" && password == "PasqualeMiletta2001" ) auth = true;
+  if(squadra == "Magola UtD" && password == "GiacintoSimoneMagola" ) auth = true;
+  if(squadra == "PakiGio 2125" && password == "Silvestro2105" ) auth = true;
+  if(squadra == "rufy team fc" && password == "Roberto1910" ) auth = true;
+  if(squadra == "SCOOBY GUD fc" && password == "SonettoMaggisano1234" ) auth = true;
+
+  if (!auth) return res.status(403).json({ error: "Password errata" });
+
+  try {
+    const rosaRes = await pool.query("SELECT * FROM rose WHERE squadra = $1", [squadra]);
+    if (!rosaRes.rows.length) return res.status(404).json({ error: "Rosa non trovata" });
+    
+    const rosa = rosaRes.rows[0];
+    const giocatori = JSON.parse(rosa.giocatori || '[]');
+    
+    // Ottieni dettagli giocatori con quotazioni
+    const giocatoriDettagli = [];
+    for (const nome of giocatori) {
+      const gRes = await pool.query("SELECT * FROM giocatori WHERE nome = $1", [nome]);
+      if (gRes.rows.length) giocatoriDettagli.push(gRes.rows[0]);
+    }
+    
+    res.json({ crediti: rosa.crediti, giocatori: giocatoriDettagli });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Mercato - Svincola giocatore
+app.post("/api/mercato/svincola", async (req, res) => {
+  const { squadra, password, giocatore, quotazione } = req.body;
+  let auth = false;
+  if(squadra == "Kira team" && password == "TommasoAstorino0406" ) auth = true;
+  if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
+  if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
+  if(squadra == "i compagni del secolo" && password == "RenatoRiccardo11" ) auth = true;
+  if(squadra == "Horto Muso" && password == "Yyynnniii" ) auth = true;
+  if(squadra == "Macelleria Gioielleria" && password == "PasqualeMiletta2001" ) auth = true;
+  if(squadra == "Magola UtD" && password == "GiacintoSimoneMagola" ) auth = true;
+  if(squadra == "PakiGio 2125" && password == "Silvestro2105" ) auth = true;
+  if(squadra == "rufy team fc" && password == "Roberto1910" ) auth = true;
+  if(squadra == "SCOOBY GUD fc" && password == "SonettoMaggisano1234" ) auth = true;
+
+  if (!auth) return res.status(403).json({ error: "Password errata" });
+
+  try {
+    const rosaRes = await pool.query("SELECT * FROM rose WHERE squadra = $1", [squadra]);
+    if (!rosaRes.rows.length) return res.status(404).json({ error: "Rosa non trovata" });
+    
+    const rosa = rosaRes.rows[0];
+    const giocatori = JSON.parse(rosa.giocatori || '[]');
+    
+    // Rimuovi giocatore dalla rosa
+    const nuoviGiocatori = giocatori.filter(g => g !== giocatore);
+    const nuoviCrediti = rosa.crediti + quotazione;
+    
+    await pool.query(
+      "UPDATE rose SET giocatori = $1, crediti = $2 WHERE squadra = $3",
+      [JSON.stringify(nuoviGiocatori), nuoviCrediti, squadra]
+    );
+    
+    res.json({ ok: true, nuoviCrediti });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 export default app;

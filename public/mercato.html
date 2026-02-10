@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Mercato</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Mercato</h1>
+  
+  <div>
+    <h2>Svincola Giocatore</h2>
+    <label>Squadra:
+      <select id="squadraSelect">
+        <option value="">Seleziona squadra...</option>
+      </select>
+    </label>
+    <input type="password" id="passwordInput" placeholder="Password">
+    <button id="btnCaricaRosa">Carica Rosa</button>
+  </div>
+
+  <div id="rosaContainer" style="display:none;">
+    <h3>Rosa di <span id="nomeSquadra"></span></h3>
+    <p>Crediti disponibili: <span id="crediti"></span></p>
+    
+    <div id="giocatoriRosa"></div>
+  </div>
+
+  <button onclick="location.href='index.html'">← Torna alla Home</button>
+
+  <script>
+    const squadre = [
+      "Kira team", "AC TUA", "FC Paulo Team", "i compagni del secolo",
+      "Horto Muso", "Macelleria Gioielleria", "Magola UtD", 
+      "PakiGio 2125", "rufy team fc", "SCOOBY GUD fc"
+    ];
+
+    // Popola select squadre
+    const select = document.getElementById("squadraSelect");
+    squadre.forEach(s => {
+      const option = document.createElement("option");
+      option.value = s;
+      option.textContent = s;
+      select.appendChild(option);
+    });
+
+    document.getElementById("btnCaricaRosa").addEventListener("click", async () => {
+      const squadra = document.getElementById("squadraSelect").value;
+      const password = document.getElementById("passwordInput").value;
+      
+      if (!squadra || !password) {
+        alert("Seleziona squadra e inserisci password");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/mercato/rosa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ squadra, password })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error);
+          return;
+        }
+
+        document.getElementById("nomeSquadra").textContent = squadra;
+        document.getElementById("crediti").textContent = data.crediti;
+        
+        const container = document.getElementById("giocatoriRosa");
+        container.innerHTML = "";
+        
+        data.giocatori.forEach(g => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <span>${g.nome} - ${g.ruolo} (${g.squadra}) - Q: ${g.qa}</span>
+            <button onclick="svincolaGiocatore('${g.nome}', ${g.qa})">Svincola</button>
+          `;
+          container.appendChild(div);
+        });
+
+        document.getElementById("rosaContainer").style.display = "block";
+      } catch (err) {
+        alert("Errore: " + err.message);
+      }
+    });
+
+    async function svincolaGiocatore(nome, quotazione) {
+      const squadra = document.getElementById("squadraSelect").value;
+      const password = document.getElementById("passwordInput").value;
+      
+      if (!confirm(`Vuoi svincolare ${nome}? Riceverai ${quotazione} crediti.`)) return;
+
+      try {
+        const res = await fetch("/api/mercato/svincola", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ squadra, password, giocatore: nome, quotazione })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error);
+          return;
+        }
+
+        alert(`${nome} svincolato! Nuovi crediti: ${data.nuoviCrediti}`);
+        document.getElementById("btnCaricaRosa").click(); // Ricarica rosa
+      } catch (err) {
+        alert("Errore: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
