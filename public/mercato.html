@@ -75,8 +75,8 @@
         data.giocatori.forEach(g => {
           const div = document.createElement("div");
           div.innerHTML = `
-            <span>${g.nome} - ${g.ruolo} (${g.squadra}) - Q: ${g.qa}</span>
-            <button onclick="svincolaGiocatore('${g.nome}', ${g.qa})">Svincola</button>
+            <span>${g.nome} - ${g.ruolo || ''} (${g.squadra || ''}) - Q: ${g.quotazione}</span>
+            <button onclick="svincolaGiocatore('${g.nome}', ${g.quotazione})">Svincola</button>
           `;
           container.appendChild(div);
         });
