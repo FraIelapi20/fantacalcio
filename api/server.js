@@ -361,7 +361,7 @@ app.post("/api/mercato/rosa", async (req, res) => {
       }
     }
     
-    res.json({ crediti: parseInt(rosa.crediti) || 0, giocatori, svincoli_disponibili: rosa.svincoli_disponibili || 3 });
+    res.json({ crediti: parseInt(rosa.crediti) || 0, giocatori, svincoli_disponibili: rosa.svincoli_disponibili ?? 3 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
