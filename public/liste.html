@@ -44,7 +44,7 @@
 
       data.forEach(g => {
         const li = document.createElement("li");
-        li.textContent = `${g.nome} (Q: ${g.qa || '-'})`;
+        li.textContent = `${g.nome} - ${g.squadra} (Q: ${g.qa || '-'})`;
         if (g.ruolo === "P") document.getElementById("listaP").appendChild(li);
         if (g.ruolo === "D") document.getElementById("listaD").appendChild(li);
         if (g.ruolo === "C") document.getElementById("listaC").appendChild(li);
