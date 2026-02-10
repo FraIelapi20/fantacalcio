@@ -361,7 +361,7 @@ app.post("/api/mercato/rosa", async (req, res) => {
       }
     }
     
-    res.json({ crediti: parseInt(rosa.crediti) || 0, giocatori });
+    res.json({ crediti: parseInt(rosa.crediti) || 0, giocatori, svincoli_disponibili: rosa.svincoli_disponibili || 3 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -389,6 +389,10 @@ app.post("/api/mercato/svincola", async (req, res) => {
     if (!rosaRes.rows.length) return res.status(404).json({ error: "Rosa non trovata" });
     
     const rosa = rosaRes.rows[0];
+    if (rosa.svincoli_disponibili <= 0) {
+      return res.status(400).json({ error: "Nessuno svincolo disponibile" });
+    }
+    
     let giocatori = [];
     try {
       const giocatoriText = rosa.giocatori || '[]';
@@ -401,10 +405,77 @@ app.post("/api/mercato/svincola", async (req, res) => {
     // Rimuovi giocatore dalla rosa
     const nuoviGiocatori = giocatori.filter(g => g.nome !== giocatore);
     const nuoviCrediti = parseInt(rosa.crediti) + quotazione;
+    const nuoviSvincoli = rosa.svincoli_disponibili - 1;
+    
+    await pool.query(
+      "UPDATE rose SET giocatori = $1, crediti = $2, svincoli_disponibili = $3 WHERE squadra = $4",
+      [JSON.stringify(nuoviGiocatori), nuoviCrediti.toString(), nuoviSvincoli, squadra]
+    );
+    
+    res.json({ ok: true, nuoviCrediti });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API Mercato - Acquista giocatore
+app.post("/api/mercato/acquista", async (req, res) => {
+  const { squadra, password, giocatore, ruolo, quotazione } = req.body;
+  let auth = false;
+  if(squadra == "Kira team" && password == "TommasoAstorino0406" ) auth = true;
+  if(squadra == "AC TUA" && password == "NinoDiaco1110" ) auth = true;
+  if(squadra == "FC Paulo Team" && password == "Sky2207" ) auth = true;
+  if(squadra == "i compagni del secolo" && password == "RenatoRiccardo11" ) auth = true;
+  if(squadra == "Horto Muso" && password == "Yyynnniii" ) auth = true;
+  if(squadra == "Macelleria Gioielleria" && password == "PasqualeMiletta2001" ) auth = true;
+  if(squadra == "Magola UtD" && password == "GiacintoSimoneMagola" ) auth = true;
+  if(squadra == "PakiGio 2125" && password == "Silvestro2105" ) auth = true;
+  if(squadra == "rufy team fc" && password == "Roberto1910" ) auth = true;
+  if(squadra == "SCOOBY GUD fc" && password == "SonettoMaggisano1234" ) auth = true;
+
+  if (!auth) return res.status(403).json({ error: "Password errata" });
+
+  try {
+    const rosaRes = await pool.query("SELECT * FROM rose WHERE squadra = $1", [squadra]);
+    if (!rosaRes.rows.length) return res.status(404).json({ error: "Rosa non trovata" });
+    
+    const rosa = rosaRes.rows[0];
+    if (parseInt(rosa.crediti) < quotazione) {
+      return res.status(400).json({ error: "Crediti insufficienti" });
+    }
+    
+    let giocatori = [];
+    try {
+      const giocatoriText = rosa.giocatori || '[]';
+      const cleanText = giocatoriText.replace(/\]\[/g, ',').replace(/^\[+/, '[').replace(/\]+$/, ']');
+      giocatori = JSON.parse(cleanText);
+    } catch (e) {
+      giocatori = [];
+    }
+    
+    if (giocatori.some(g => g.nome.toLowerCase() === giocatore.toLowerCase())) {
+      return res.status(400).json({ error: "Giocatore già presente nella rosa" });
+    }
+    
+    const conteggioRuoli = { P: 0, D: 0, C: 0, A: 0 };
+    giocatori.forEach(g => {
+      if (g.ruolo) conteggioRuoli[g.ruolo]++;
+    });
+    
+    if (conteggioRuoli[ruolo] >= 2) {
+      return res.status(400).json({ error: `Hai già 2 ${ruolo}. Non puoi acquistarne altri.` });
+    }
+    
+    if (giocatori.length >= 8) {
+      return res.status(400).json({ error: "Rosa completa (8 giocatori). Svincola prima di acquistare." });
+    }
+    
+    giocatori.push({ nome: giocatore, quotazione, ruolo });
+    const nuoviCrediti = parseInt(rosa.crediti) - quotazione;
     
     await pool.query(
       "UPDATE rose SET giocatori = $1, crediti = $2 WHERE squadra = $3",
-      [JSON.stringify(nuoviGiocatori), nuoviCrediti.toString(), squadra]
+      [JSON.stringify(giocatori), nuoviCrediti.toString(), squadra]
     );
     
     res.json({ ok: true, nuoviCrediti });
