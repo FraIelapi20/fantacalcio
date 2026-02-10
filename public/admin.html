@@ -23,6 +23,13 @@
   <pre id="msgLock"></pre>
 </section>
 
+<section>
+  <h2>Aggiorna quotazioni rose</h2>
+  <input type="password" id="pwdQuotazioni" placeholder="Password">
+  <button id="btnAggiornaQuotazioni">Aggiorna tutte le quotazioni</button>
+  <pre id="msgQuotazioni"></pre>
+</section>
+
 <script>
 let roseData = [];
 let titolari = new Set();
@@ -30,6 +37,7 @@ let panchina = new Set();
 
 document.getElementById("btnLock").addEventListener("click", () => lockGiornata(true));
 document.getElementById("btnUnlock").addEventListener("click", () => lockGiornata(false));
+document.getElementById("btnAggiornaQuotazioni").addEventListener("click", aggiornaQuotazioni);
 
 async function lockGiornata(locked) {
   const giornata = document.getElementById("giornataLock").value;
@@ -41,6 +49,17 @@ async function lockGiornata(locked) {
   });
   const data = await res.json();
   document.getElementById("msgLock").textContent = JSON.stringify(data, null, 2);
+}
+
+async function aggiornaQuotazioni() {
+  const password = document.getElementById("pwdQuotazioni").value;
+  const res = await fetch("/api/admin/aggiorna-quotazioni", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ password })
+  });
+  const data = await res.json();
+  document.getElementById("msgQuotazioni").textContent = JSON.stringify(data, null, 2);
 }
 // --- Calcolo giornata con panchina ---
 document.getElementById("btnMostraCalcola").addEventListener("click", async () => {

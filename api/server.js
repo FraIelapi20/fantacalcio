@@ -266,6 +266,48 @@ app.post("/api/lock-giornata", async (req, res) => {
   }
 });
 
+// API Admin - Aggiorna quotazioni rose
+app.post("/api/admin/aggiorna-quotazioni", async (req, res) => {
+  const { password } = req.body;
+  if (password !== "Yyynnniii") return res.status(403).json({ error: "Password errata" });
+
+  try {
+    const roseRes = await pool.query("SELECT * FROM rose");
+    let aggiornate = 0;
+    
+    for (const rosa of roseRes.rows) {
+      let giocatori = [];
+      try {
+        const giocatoriText = rosa.giocatori || '[]';
+        const cleanText = giocatoriText.replace(/\]\[/g, ',').replace(/^\[+/, '[').replace(/\]+$/, ']');
+        giocatori = JSON.parse(cleanText);
+      } catch (e) {
+        continue;
+      }
+      
+      // Aggiorna quotazioni per ogni giocatore
+      for (let g of giocatori) {
+        const quotazioneRes = await pool.query("SELECT qa FROM giocatori WHERE nome = $1", [g.nome]);
+        if (quotazioneRes.rows.length && quotazioneRes.rows[0].qa) {
+          g.quotazione = quotazioneRes.rows[0].qa;
+        }
+      }
+      
+      // Salva rosa aggiornata
+      await pool.query(
+        "UPDATE rose SET giocatori = $1 WHERE id = $2",
+        [JSON.stringify(giocatori), rosa.id]
+      );
+      aggiornate++;
+    }
+    
+    res.json({ ok: true, message: `Aggiornate ${aggiornate} rose con le quotazioni attuali` });
+  } catch (err) {
+    console.error("Errore aggiorna-quotazioni:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/giocatori", async (req, res) => {
   const { search } = req.query;
   let query = "SELECT * FROM giocatori ORDER BY ruolo, nome";
